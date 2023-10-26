@@ -8,8 +8,8 @@ addpath(pwd)
 sdk = ThorlabsCameraSDKLoader();
 
 %% Create cameras
-cam1 = ThorlabsCameraLP126MU("24141", sdk, name='Near field');
-cam2 = ThorlabsCameraLP126MU("24140", sdk, name='Far field');
+cam1 = ThorlabsCamera("07002", sdk, name='Near field');
+cam2 = ThorlabsCamera("24140", sdk, name='Far field');
 
 %% Setup cameras
 cam1.setup("ExposureTimeUs", 9000, ROISize=512);

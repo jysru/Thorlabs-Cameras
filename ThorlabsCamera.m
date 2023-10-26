@@ -1,4 +1,4 @@
-classdef ThorlabsCameraLP126MU < handle
+classdef ThorlabsCamera < handle
     %THORLABSCAMERALP126MU Summary of this class goes here
     %   Detailed explanation goes here
 
@@ -24,7 +24,7 @@ classdef ThorlabsCameraLP126MU < handle
     end
     
     methods
-        function obj = ThorlabsCameraLP126MU(sn, sdk, opts)
+        function obj = ThorlabsCamera(sn, sdk, opts)
             arguments
                 sn string
                 sdk ThorlabsCameraSDKLoader
