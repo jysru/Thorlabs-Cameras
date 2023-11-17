@@ -21,6 +21,8 @@ classdef ThorlabsCamera < handle
     properties (GetAccess=public, SetAccess=private)
         NETAssembly
         foundCamera = false;
+        live_figure_handle
+        live_plot_handle
     end
     
     methods
@@ -120,6 +122,30 @@ classdef ThorlabsCamera < handle
             if opts.DisplayTitle, title(obj.name); end
             if opts.DisplayColorbar, colorbar(); end
         end
+
+
+        function live(obj, opts)
+            arguments
+                obj
+                opts.FigureNumber (1,1) double = 1
+                opts.DisplayTitle (1,1) logical = true
+                opts.DisplayColorbar (1,1) logical = true
+            end
+            
+            if isempty(obj.live_figure_handle)
+                obj.init_display(FigureNumber=opts.FigureNumber, DisplayTitle=opts.DisplayTitle, DisplayColorbar=opts.DisplayColorbar)
+            else
+                if ~isvalid(obj.live_figure_handle)
+                    obj.init_display(FigureNumber=opts.FigureNumber, DisplayTitle=opts.DisplayTitle, DisplayColorbar=opts.DisplayColorbar)
+                end
+            end
+
+            while isvalid(obj.live_figure_handle)
+                obj.get_snapshot(DisplayTimer=false);
+                set(obj.live_plot_handle, 'CData', obj.lastFrame);
+                drawnow;
+            end
+        end
         
         function close(obj)
             obj.tlCamera.Disarm;
@@ -137,14 +163,39 @@ classdef ThorlabsCamera < handle
         function delete(obj)
             obj.close();
         end
-        
+
+        function set_exposure(obj, value)
+            arguments
+                obj
+                value (1,1) double {mustBePositive, mustBeNonempty}
+            end
+            obj.tlCamera.ExposureTime_us = value;
+        end
     end
 
     methods (Access = protected)
         function get_path(obj)
             obj.InitPath = pwd;
         end
-    end
 
+        function init_display(obj, opts)
+            arguments
+                obj
+                opts.FigureNumber (1,1) double = 1
+                opts.DisplayTitle (1,1) logical = true
+                opts.DisplayColorbar (1,1) logical = true
+            end
+
+            obj.live_figure_handle = figure(opts.FigureNumber);
+            data = zeros(obj.ROISize, "uint16");
+            obj.live_plot_handle = imagesc(data);
+            if opts.DisplayTitle, title(obj.name); end
+            if opts.DisplayColorbar, colorbar(); end
+        end
+    end
 end
+
+
+
+
 
