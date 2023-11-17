@@ -16,11 +16,13 @@ cam1.setup("ExposureTimeUs", 9000, ROISize=512);
 %% Arm cameras
 cam1.run()
 
-%% Change exposure on the fly and start live mode (close figure to stop live)
+%% Change exposure on the fly and start live mode
+% Close figure to stop live, or press stop button
 cam1.set_exposure(1000);
 cam1.live()
 
-%% Change exposure on the fly and start live mode (close figure to stop live)
+%% Change exposure on the fly and start live mode
+% Close figure to stop live, or press stop button
 cam1.set_exposure(1000000);
 cam1.live()
 
