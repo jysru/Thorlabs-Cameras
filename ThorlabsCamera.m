@@ -187,10 +187,16 @@ classdef ThorlabsCamera < handle
                 opts.DisplayColorbar (1,1) logical = true
             end
 
-            obj.live_figure_handle = figure(opts.FigureNumber);
+            obj.live_figure_handle = figure(opts.FigureNumber);         
             obj.live_axis_handle = gca();
+            cmap = colormap('jet');
+            
             data = zeros(obj.ROISize, "uint16");
             obj.live_plot_handle = imagesc(data);
+            obj.live_axis_handle.CLimMode = 'manual';
+            obj.live_axis_handle.CLim = [0, 2^obj.tlCamera.BitDepth-1];
+            set(obj.live_axis_handle, 'PlotBoxAspectRatio', [1, 1, 1]);
+            set(obj.live_axis_handle, 'Colormap', cmap)
             if opts.DisplayTitle, title(obj.name); end
             if opts.DisplayColorbar, colorbar(); end
         end
