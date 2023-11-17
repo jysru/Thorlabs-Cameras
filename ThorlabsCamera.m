@@ -23,6 +23,7 @@ classdef ThorlabsCamera < handle
         foundCamera = false;
         live_figure_handle
         live_plot_handle
+        live_axis_handle
     end
     
     methods
@@ -187,6 +188,7 @@ classdef ThorlabsCamera < handle
             end
 
             obj.live_figure_handle = figure(opts.FigureNumber);
+            obj.live_axis_handle = gca();
             data = zeros(obj.ROISize, "uint16");
             obj.live_plot_handle = imagesc(data);
             if opts.DisplayTitle, title(obj.name); end
