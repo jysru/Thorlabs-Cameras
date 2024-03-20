@@ -6,6 +6,7 @@ classdef ThorlabsCamera < handle
         tlCamera
         lastFrame
         name
+        Binning
     end
 
     properties (GetAccess=public, SetAccess=private)
@@ -16,6 +17,8 @@ classdef ThorlabsCamera < handle
         serialNumbers
         ROISize
         lastFrameTime
+
+
     end
 
     properties (GetAccess=public, SetAccess=private)
@@ -70,8 +73,6 @@ classdef ThorlabsCamera < handle
                 opts.FrameBufferSize (1,1) int32 = 1
             end
 
-%             opts.ROISize = int32(opts.ROISize / opts.Binning);
-
             if obj.tlCamera.BlackLevelRange > 0
                 obj.tlCamera.BlackLevel = opts.BlackLevel;
             end
@@ -82,8 +83,10 @@ classdef ThorlabsCamera < handle
             
             obj.tlCamera.ROIAndBin.ROIHeight_pixels = opts.ROISize;
             obj.tlCamera.ROIAndBin.ROIWidth_pixels = opts.ROISize;
-            obj.tlCamera.ROIAndBin.BinX = opts.Binning;
-            obj.tlCamera.ROIAndBin.BinY = opts.Binning;
+            obj.Binning = opts.Binning;
+            obj.tlCamera.ROIAndBin.BinX = 1;
+            obj.tlCamera.ROIAndBin.BinY = 1;
+
             obj.ROISize = [obj.tlCamera.ImageHeight_pixels, obj.tlCamera.ImageWidth_pixels];
 
             obj.tlCamera.FramesPerTrigger_zeroForUnlimited = 0;
@@ -101,7 +104,7 @@ classdef ThorlabsCamera < handle
         function get_snapshot(obj, opts)
             arguments
                 obj
-                opts.DisplayTimer (1,1) logical = false
+                opts.DisplayTimer (1,1) logical = false         
             end
             t_start = tic;
             imageFrame = obj.tlCamera.GetPendingFrameOrNull;
@@ -110,6 +113,7 @@ classdef ThorlabsCamera < handle
             end
             obj.lastFrame = uint16(imageFrame.ImageData.ImageData_monoOrBGR);
             obj.lastFrame = reshape(obj.lastFrame, obj.ROISize);
+            obj.lastFrame = obj.pooling2d_Fast(obj.lastFrame, obj.Binning);
             obj.lastFrameTime = toc(t_start);
             if opts.DisplayTimer
                 disp(obj.lastFrameTime)
@@ -127,12 +131,13 @@ classdef ThorlabsCamera < handle
 
             figure(opts.FigureNumber)
             if opts.Amplitude
-                imagesc(int(sqrt(double(obj.lastFrame))));
+                imagesc(uint32(sqrt(double(obj.lastFrame))));
             else
                 imagesc(obj.lastFrame);
             end
             if opts.DisplayTitle, title(obj.name); end
             if opts.DisplayColorbar, colorbar(); end
+            colormap('pink')
         end
 
         function live(obj, opts)
@@ -177,11 +182,10 @@ classdef ThorlabsCamera < handle
             settings.ROIWidth_pixels = obj.tlCamera.ROIAndBin.ROIWidth_pixels;
             settings.ImageHeight_pixels = obj.tlCamera.ImageHeight_pixels;
             settings.ImageWidth_pixels = obj.tlCamera.ImageWidth_pixels;
-            settings.BinX = obj.tlCamera.ROIAndBin.BinX;
-            settings.BinY = obj.tlCamera.ROIAndBin.BinY;
+            settings.Camera_BinX = obj.tlCamera.ROIAndBin.BinX;
+            settings.Camera_BinY = obj.tlCamera.ROIAndBin.BinY;
+            settings.BinningXY = obj.Binning;
             settings.FramesPerTrigger_zeroForUnlimited = obj.tlCamera.FramesPerTrigger_zeroForUnlimited;
-            settings.OperationMode = obj.tlCamera.OperationMode;
-            settings.TriggerPolarity = obj.tlCamera.TriggerPolarity;
             settings.MaximumNumberOfFramesToQueue = obj.tlCamera.MaximumNumberOfFramesToQueue;
             settings.SerialNumber = string(obj.tlCamera.SerialNumber);
             settings.SensorPixelWidth_um = obj.tlCamera.SensorPixelWidth_um;
@@ -238,19 +242,26 @@ classdef ThorlabsCamera < handle
             
             cmap = colormap('jet');
             
-            data = zeros(obj.ROISize, "uint16");
+            data = zeros(round(obj.ROISize / obj.Binning), "uint16");
             obj.live_plot_handle = imagesc(data);
             if opts.DisplayCross
-                plot(obj.live_axis_handle, int32(obj.tlCamera.ImageHeight_pixels / 2), int32(obj.tlCamera.ImageWidth_pixels / 2), 'Marker','+', 'Color','w', 'LineStyle', 'none', 'MarkerSize',15);
+                plot(obj.live_axis_handle, int32(obj.tlCamera.ImageHeight_pixels / obj.Binning / 2), int32(obj.tlCamera.ImageWidth_pixels / obj.Binning / 2), 'Marker','+', 'Color','w', 'LineStyle', 'none', 'MarkerSize',15);
             end
             obj.live_axis_handle.CLimMode = 'manual';
             obj.live_axis_handle.CLim = [0, 2^obj.tlCamera.BitDepth-1];
-            obj.live_axis_handle.XLim = [1, obj.tlCamera.ImageWidth_pixels];
-            obj.live_axis_handle.YLim = [1, obj.tlCamera.ImageHeight_pixels];
+            obj.live_axis_handle.XLim = [1, int32(obj.tlCamera.ImageWidth_pixels / obj.Binning)];
+            obj.live_axis_handle.YLim = [1, int32(obj.tlCamera.ImageHeight_pixels / obj.Binning)];
             set(obj.live_axis_handle, 'PlotBoxAspectRatio', [1, 1, 1]);
             set(obj.live_axis_handle, 'Colormap', cmap)
             if opts.DisplayTitle, title(obj.name); end
             if opts.DisplayColorbar, colorbar(); end
+        end
+    end
+
+    methods (Static)
+        function ImagePooled = pooling2d_Fast(Image, kernelSize)
+            ImagePooled = reshape(Image, [kernelSize, size(Image,1)/kernelSize, kernelSize, size(Image,1)/kernelSize]);
+            ImagePooled = single(squeeze(mean(ImagePooled, [1 ,3])));
         end
     end
 end
