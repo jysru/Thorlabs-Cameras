@@ -4,7 +4,8 @@ classdef ThorlabsCameraSDKLoader < handle
 
     properties (GetAccess=public, SetAccess=private)
         InitPath = pwd;
-        SDKPath = 'C:\Program Files\Thorlabs\Scientific Imaging\ThorCam'
+        % SDKPath = 'C:\Program Files\Thorlabs\Scientific Imaging\ThorCam'
+        SDKPath = 'C:\Drivers\Scientific_Camera_Interfaces_Windows-2.1\SDK\DotNet Toolkit\dlls\Managed_64_lib'
         AssemblyName = 'Thorlabs.TSI.TLCamera'
         tlCameraSDK
         NETAssembly
