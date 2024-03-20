@@ -113,7 +113,9 @@ classdef ThorlabsCamera < handle
             end
             obj.lastFrame = uint16(imageFrame.ImageData.ImageData_monoOrBGR);
             obj.lastFrame = reshape(obj.lastFrame, obj.ROISize);
-            obj.lastFrame = obj.pooling2d_Fast(obj.lastFrame, obj.Binning);
+            if obj.Binning > 1
+                obj.lastFrame = obj.pooling2d_Fast(obj.lastFrame, obj.Binning);
+            end
             obj.lastFrameTime = toc(t_start);
             if opts.DisplayTimer
                 disp(obj.lastFrameTime)
