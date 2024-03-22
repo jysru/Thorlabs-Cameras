@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import time
+import os
 
 import typing
 import threading
@@ -36,13 +37,19 @@ def _add_sdk_path():
 
 
 class ThorlabsCamera:
+    _ABSPATH_TO_DLLS = 'C:/Drivers/Scientific_Camera_Interfaces_Windows-2.1/SDK/Python Toolkit/dlls/64_lib'
+    _MAX_FRAME_ATTEMPTS = 100
 
     def __init__(self, serial_number: str, name: str = '') -> None:
-        _add_sdk_path()
+        self._add_sdk()
         self._load_sdk()
         self.discover()
         self.open(serial_number)
         self.device.name = name
+
+    def _add_sdk(self):
+        os.add_dll_directory(self.abspath_to_dlls)
+        os.environ['PATH'] = self.abspath_to_dlls + os.pathsep + os.environ['PATH']
 
     def _load_sdk(self):
         self.sdk = TLCameraSDK()
@@ -79,13 +86,24 @@ class ThorlabsCamera:
         self.device.arm(2)
         self.device.issue_software_trigger()
 
-    def get_snapshot(self, display_timer: bool = False):
+    def get_snapshot(self, display_timer: bool = False, max_get_frame: int = _MAX_FRAME_ATTEMPTS):
         start = time.time()
         frame = self.device.get_pending_frame_or_null()
+
+        attempt = 0
+        while frame is None:
+            frame = self.device.get_pending_frame_or_null()
+            attempt += 1
+            if attempt > max_get_frame:
+                print("Could not get a snapshot")
+                break
+            
         if frame is not None:
-            self.last_frame = np.copy(frame.image_buffer)
+            self.last_frame = np.copy(frame.image_buffer).astype(np.uint16)
         else:
+            self.last_frame = None
             raise ValueError("No frame arrived within the timeout!")
+        
         stop = time.time()
         self.last_frame_duration = stop - start
         if display_timer:
