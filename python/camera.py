@@ -48,8 +48,8 @@ class ThorlabsCamera:
         self.device.name = name
 
     def _add_sdk(self):
-        os.add_dll_directory(self.abspath_to_dlls)
-        os.environ['PATH'] = self.abspath_to_dlls + os.pathsep + os.environ['PATH']
+        os.add_dll_directory(self._ABSPATH_TO_DLLS)
+        os.environ['PATH'] = self._ABSPATH_TO_DLLS + os.pathsep + os.environ['PATH']
 
     def _load_sdk(self):
         self.sdk = TLCameraSDK()
